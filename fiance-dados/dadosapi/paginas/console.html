@@ -1160,7 +1160,17 @@ function desenharConta(conta, uso) {
           const ok = await confirmar({ titulo: `Reativar ${conta.email}?`, texto: "As chaves que não foram revogadas voltam a funcionar na hora.", botao: "Reativar" });
           if (!ok) return;
           try { await tentar(() => chamar("PATCH", `/admin/contas/${conta.id}`, { ativa: true }), { sucesso: "Conta reativada." }); await tentar(carregar); await abrirConta(conta.id); } catch {}
-        } }, "Reativar conta"));
+        } }, "Reativar conta"),
+        el("p", { class: "suave", style: "margin:16px 0 8px" }, "Remover apaga a conta, as chaves, o uso e as assinaturas, e libera o e-mail. Assinatura viva é cancelada no Asaas antes. Não tem volta."),
+        el("button", { type: "button", class: "perigo", onclick: async () => {
+          const ok = await confirmar({ titulo: `Remover ${conta.email} de vez?`, texto: "A conta some do console com as chaves, o histórico de uso e as assinaturas. O que estiver no Asaas fica lá, cancelado.", botao: "Remover", perigo: true });
+          if (!ok) return;
+          try {
+            await tentar(() => chamar("DELETE", `/admin/contas/${conta.id}`), { sucesso: "Conta removida." });
+            $("dialogo-conta").close();
+            await tentar(carregar);
+          } catch {}
+        } }, "Remover de vez"));
 
   preencher(corpo,
     el("h3", {}, "Uso nos últimos 30 dias"),

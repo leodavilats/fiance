@@ -660,6 +660,63 @@ def test_pagamento_antigo_nao_muda_o_plano_de_quem_ja_esta_pago_adiante(com_cobr
     )
 
 
+def test_conta_desativada_sai_de_vez_e_a_assinatura_cai_no_asaas(
+    com_cobranca, pagamentos, pedidos, bancos
+):
+    chave = _assinar_e_pagar(com_cobranca, pagamentos)
+    conta_id = com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["id"]
+    admin = {"X-Admin-Token": TOKEN}
+
+    ativa = com_cobranca.delete(f"/admin/contas/{conta_id}", headers=admin)
+    com_cobranca.patch(f"/admin/contas/{conta_id}", json={"ativa": False}, headers=admin)
+    removida = com_cobranca.delete(f"/admin/contas/{conta_id}", headers=admin)
+
+    assert ativa.status_code == 409, "só sai de vez a conta já desativada"
+    assert removida.status_code == 204
+    assert ("DELETE", "/v3/subscriptions/sub_1") in [(p.method, p.url.path) for p in pedidos], (
+        "apagar só aqui deixaria o Asaas cobrando quem não tem mais conta"
+    )
+    assert com_cobranca.get(f"/admin/contas/{conta_id}", headers=admin).status_code == 404
+    with bancos.acesso.connect() as conn:
+        restos = conn.execute(
+            sa.text(
+                "SELECT (SELECT count(*) FROM acesso.chave) + (SELECT count(*) FROM "
+                "acesso.assinatura) + (SELECT count(*) FROM acesso.pagamento)"
+            )
+        ).scalar_one()
+    assert restos == 0
+    assert com_cobranca.post("/v1/assinatura", json=_cadastro()).status_code == 201, (
+        "o e-mail fica livre"
+    )
+
+
+def test_remover_conta_que_o_asaas_nao_cancela_nao_apaga_nada(com_cobranca, pagamentos, recusas):
+    chave = _assinar_e_pagar(com_cobranca, pagamentos)
+    conta_id = com_cobranca.get("/v1/conta", headers=chave).json()["dados"]["id"]
+    admin = {"X-Admin-Token": TOKEN}
+    com_cobranca.patch(f"/admin/contas/{conta_id}", json={"ativa": False}, headers=admin)
+    recusas[("DELETE", "/v3/subscriptions/sub_1")] = 500
+
+    resposta = com_cobranca.delete(f"/admin/contas/{conta_id}", headers=admin)
+
+    assert resposta.status_code == 502
+    assert com_cobranca.get(f"/admin/contas/{conta_id}", headers=admin).status_code == 200
+
+
+def test_convidado_desativado_sai_com_a_cobranca_desligada(cliente):
+    criada = criar_conta(cliente, email="sai@teste.com")
+    chave = {"Authorization": f"Bearer {criada['chave']['chave']}"}
+    cliente.get("/v1/ativos", headers=chave)
+    admin = {"X-Admin-Token": TOKEN}
+    conta_id = criada["conta"]["id"]
+
+    cliente.patch(f"/admin/contas/{conta_id}", json={"ativa": False}, headers=admin)
+    removida = cliente.delete(f"/admin/contas/{conta_id}", headers=admin)
+
+    assert removida.status_code == 204, "a chave usada deixa uso gravado, que sai junto"
+    assert cliente.delete(f"/admin/contas/{conta_id}", headers=admin).status_code == 404
+
+
 def test_a_conferencia_roda_sozinha_ate_parar(monkeypatch):
     monkeypatch.setattr(app, "PRIMEIRA_CONFERENCIA", 0)
     monkeypatch.setattr(app, "CONFERENCIA_A_CADA", 0)

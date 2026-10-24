@@ -387,6 +387,27 @@ def revogar_chave(engine: sa.Engine, conta_id: int, prefixo: str) -> None:
         raise SemAcesso(404, "Chave não encontrada nesta conta, ou já revogada.")
 
 
+def remover_conta(engine: sa.Engine, conta_id: int) -> None:
+    with engine.begin() as conn:
+        conta = conn.execute(
+            sa.text("SELECT ativa FROM acesso.conta WHERE id = :id FOR UPDATE"), {"id": conta_id}
+        ).first()
+        if conta is None:
+            raise SemAcesso(404, "Conta não encontrada.")
+        if conta.ativa:
+            raise SemAcesso(409, "Desative a conta antes de removê-la.")
+        for consulta in (
+            "DELETE FROM acesso.uso_diario WHERE chave_id IN "
+            "(SELECT id FROM acesso.chave WHERE conta_id = :id)",
+            "DELETE FROM acesso.chave WHERE conta_id = :id",
+            "DELETE FROM acesso.pagamento WHERE assinatura_id IN "
+            "(SELECT id FROM acesso.assinatura WHERE conta_id = :id)",
+            "DELETE FROM acesso.assinatura WHERE conta_id = :id",
+            "DELETE FROM acesso.conta WHERE id = :id",
+        ):
+            conn.execute(sa.text(consulta), {"id": conta_id})
+
+
 def preparar_conta_de_fumaca(engine: sa.Engine, plano: str) -> int:
     with engine.begin() as conn:
         conta_id = conn.execute(

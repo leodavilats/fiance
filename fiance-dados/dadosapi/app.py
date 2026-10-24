@@ -645,6 +645,15 @@ def criar(
             mudar_observacao="observacao" in enviados,
         )
 
+    @app.delete(
+        "/admin/contas/{conta_id}",
+        include_in_schema=False,
+        status_code=204,
+        dependencies=[Depends(administrador)],
+    )
+    def admin_remover_conta(conta_id: int) -> None:
+        cobranca.remover_conta(bancos.acesso, asaas, conta_id)
+
     @app.post(
         "/admin/contas/{conta_id}/chaves",
         include_in_schema=False,

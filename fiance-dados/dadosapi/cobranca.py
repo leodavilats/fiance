@@ -279,6 +279,36 @@ def _cancelar_no_asaas(engine: sa.Engine, asaas: Asaas, assinatura_id: str) -> b
     return True
 
 
+def remover_conta(engine: sa.Engine, asaas: Asaas | None, conta_id: int) -> None:
+    with engine.connect() as conn:
+        ativa = conn.execute(
+            sa.text("SELECT ativa FROM acesso.conta WHERE id = :id"), {"id": conta_id}
+        ).scalar()
+        vivas = (
+            conn.execute(
+                sa.text(
+                    "SELECT asaas_assinatura FROM acesso.assinatura WHERE conta_id = :id "
+                    "AND (situacao IN ('aguardando', 'ativa') OR cancelamento_pendente)"
+                ),
+                {"id": conta_id},
+            )
+            .scalars()
+            .all()
+        )
+    if ativa is None:
+        raise acesso.SemAcesso(404, "Conta não encontrada.")
+    if ativa:
+        raise acesso.SemAcesso(409, "Desative a conta antes de removê-la.")
+    if vivas and asaas is None:
+        raise acesso.SemAcesso(
+            409,
+            "A conta tem assinatura viva no Asaas e a cobrança está desligada: cancele lá antes.",
+        )
+    for assinatura_id in vivas:
+        asaas._pedir("DELETE", f"/subscriptions/{assinatura_id}", ausente_vale={})
+    acesso.remover_conta(engine, conta_id)
+
+
 def link_em_aberto(asaas: Asaas, assinatura_id: str) -> str | None:
     for status in EM_ABERTO:
         cobrancas = (

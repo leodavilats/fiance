@@ -66,7 +66,7 @@ portal, e ninguém é levado até ela.
 | `/v1`, `/v1/planos`, `/v1/vitrine` | Sem chave: o índice, os planos públicos e o exemplo do portal |
 | `/` | Portal público, em telas por âncora (`#inicio`, `#exemplo`, `#dados`, `#uso`, `#planos`, `#assinar`, `#conta`): o que o serviço oferece, a documentação, a assinatura de quem chega e "minha conta" para quem tem chave, com a situação do pagamento |
 | `/docs` | OpenAPI público. As rotas `/admin` ficam fora dele |
-| `/console` | O controle do autor, em telas (`#visao`, `#contas`, `#uso`, `#nova`, `#fumaca`): contas, uso por dia e por conta, emitir e revogar chave, desativar, a [fumaça](#fumaça-em-produção) e as pendências da [cobrança](#cobrança). Pede o token de administração na tela e o guarda só na aba |
+| `/console` | O controle do autor, em telas (`#visao`, `#contas`, `#uso`, `#nova`, `#fumaca`): contas, uso por dia e por conta, emitir e revogar chave, desativar e remover, a [fumaça](#fumaça-em-produção) e as pendências da [cobrança](#cobrança). Pede o token de administração na tela e o guarda só na aba |
 | `/admin/...` | Administração, por `X-Admin-Token` |
 | `/cobranca/asaas` | Webhook do Asaas |
 | `/saude` | Saúde |
@@ -126,6 +126,7 @@ curl -X PATCH https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN" \
 curl -X PATCH https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN" \
   -H "Content-Type: application/json" -d '{"pago_ate": "2026-12-31"}'         # pagamento por fora
 curl -X DELETE https://<dominio>/admin/contas/1/chaves/fd_abcd1234 -H "X-Admin-Token: $TOKEN"  # revogar
+curl -X DELETE https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN"   # remover de vez (só desativada)
 curl "https://<dominio>/admin/uso?dias=90&conta_id=1" -H "X-Admin-Token: $TOKEN"       # uso de uma conta
 ```
 
@@ -134,6 +135,10 @@ e `null` enviado de propósito limpa `pago_ate` e `observacao`. A lista traz a `
 `a_vencer` (a 7 dias do vencimento), `em_tolerancia`, `aguardando_pagamento` (assinou e nunca pagou),
 `sem_pagamento` (venceu), `desativada` —, calculada pela mesma regra que autentica: as duas sem
 pagamento respondem 402 nas rotas de dados.
+
+**Remover apaga de vez** a conta, as chaves, o uso, as assinaturas e os pagamentos, e libera o
+e-mail. Só vale para conta já desativada (409 se ativa). Assinatura viva é cancelada no Asaas antes;
+se o Asaas não cancelar, nada é apagado. Com a cobrança desligada, conta com assinatura viva não sai.
 
 ## Cobrança
 
