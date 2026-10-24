@@ -66,7 +66,7 @@ portal, e ninguém é levado até ela.
 |---|---|
 | `/v1/...` | A API, por chave. Ativos, retratos em lote (até 50), cotações, série ajustada, proventos, eventos, informes, empresas e demonstrações, indicadores do BCB, Tesouro; e `/v1/conta` para a própria conta e as chaves |
 | `/v1`, `/v1/planos`, `/v1/vitrine` | Sem chave: o índice, os planos públicos e o exemplo do portal |
-| `/` | Portal público, em telas por âncora (`#inicio`, `#exemplo`, `#dados`, `#uso`, `#planos`, `#assinar`, `#conta`): o que o serviço oferece, a documentação, a assinatura de quem chega e "minha conta" para quem tem chave, com a situação do pagamento |
+| `/` | Portal público, em telas por âncora (`#inicio`, `#exemplo`, `#dados`, `#uso`, `#planos`, `#assinar`, `#conta`): o que o serviço oferece, a documentação, a assinatura de quem chega e "minha conta", com e-mail e senha, com a situação do pagamento |
 | `/docs` | OpenAPI público. As rotas `/admin` ficam fora dele |
 | `/console` | O controle do autor, em telas (`#visao`, `#contas`, `#uso`, `#nova`, `#fumaca`): contas, uso por dia e por conta, emitir e revogar chave, desativar e remover, a [fumaça](#fumaça-em-produção) e as pendências da [cobrança](#cobrança). Pede o token de administração na tela e o guarda só na aba |
 | `/admin/...` | Administração, por `X-Admin-Token` |
@@ -83,13 +83,21 @@ só de leitura a cada conexão aberta (`dadosapi/banco.py`).
 **A chave aparece uma vez**, na criação; a base guarda só o hash. Vale em `Authorization: Bearer` ou
 em `X-API-Key`. Toda resposta autenticada traz `X-Limite-Dia` e `X-Restante-Dia`.
 
+**A pessoa entra em Minha conta com e-mail e senha** ([ADR-036](../decisoes/ADR-036-conta-entra-com-email-e-senha.md)).
+`POST /v1/conta/sessao` devolve uma sessão `fs_…` de 12 horas, no mesmo `Authorization: Bearer`, que
+vale só em `/v1/conta`. A senha fica em scrypt e a sessão em hash. Com senha, a chave só faz
+`GET /v1/conta`: emitir, revogar, assinar e trocar a senha pedem a sessão (403 pela chave). Conta
+sem senha entra pela chave até definir uma em `PUT /v1/conta/senha`, que pede a atual quando há,
+encerra as sessões e devolve uma nova. Dez senhas erradas em 15 minutos bloqueiam o e-mail e o
+endereço (429).
+
 **Respostas de recusa:**
 
 | Status | Quando |
 |---|---|
-| 401 | Chave ausente, desconhecida ou revogada; conta desativada |
+| 401 | Chave ausente, desconhecida ou revogada; sessão vencida ou encerrada; e-mail ou senha incorretos; conta desativada |
 | 402 | Plano pago sem `pago_ate` em dia, mais três dias de tolerância. Não vale para `/v1/conta`, que aceita a chave sem pagamento e não conta na cota ([ADR-033](../decisoes/ADR-033-conta-sem-pagamento-entra-em-minha-conta.md)) |
-| 403 | Rota de um recurso que o plano não tem |
+| 403 | Rota de um recurso que o plano não tem; chave de conta com senha mexendo na conta; senha atual que não confere |
 | 429 | Limite por minuto (com `Retry-After`) ou por dia |
 
 **Os limites valem para a conta, não para a chave.** O uso é contado por chave e somado na conta,
@@ -115,7 +123,7 @@ A `observacao` da conta é da administração: o `/v1/conta` não a devolve.
 Conta nasce por convite, pela administração — no `/console` ou pela rota —, e já sai com a primeira
 chave. Com a cobrança aberta, nasce também na assinatura, pelo portal
 ([ADR-031](../decisoes/ADR-031-assinatura-cria-a-conta.md)). Quem tem conta gerencia as próprias
-chaves em `/v1/conta`, pague ou não: o `/v1/conta` traz a situação, a assinatura atual e o link da
+chaves em `/v1/conta`, com e-mail e senha, pague ou não: o `/v1/conta` traz a situação, a assinatura atual e o link da
 cobrança em aberto ([ADR-033](../decisoes/ADR-033-conta-sem-pagamento-entra-em-minha-conta.md)).
 
 ```bash
@@ -128,6 +136,7 @@ curl -X PATCH https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN" \
 curl -X PATCH https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN" \
   -H "Content-Type: application/json" -d '{"pago_ate": "2026-12-31"}'         # pagamento por fora
 curl -X DELETE https://<dominio>/admin/contas/1/chaves/fd_abcd1234 -H "X-Admin-Token: $TOKEN"  # revogar
+curl -X DELETE https://<dominio>/admin/contas/1/senha -H "X-Admin-Token: $TOKEN"  # redefinir a senha
 curl -X DELETE https://<dominio>/admin/contas/1 -H "X-Admin-Token: $TOKEN"   # remover de vez (só desativada)
 curl "https://<dominio>/admin/uso?dias=90&conta_id=1" -H "X-Admin-Token: $TOKEN"       # uso de uma conta
 ```
@@ -138,7 +147,11 @@ e `null` enviado de propósito limpa `pago_ate` e `observacao`. A lista traz a `
 `sem_pagamento` (venceu), `desativada` —, calculada pela mesma regra que autentica: as duas sem
 pagamento respondem 402 nas rotas de dados.
 
-**Remover apaga de vez** a conta, as chaves, o uso, as assinaturas e os pagamentos, e libera o
+**Redefinir a senha** apaga a senha e as sessões; as chaves seguem valendo. A pessoa volta a entrar
+com uma chave, que o console emite se ela também a perdeu, e define outra senha. O console mostra
+quem tem senha.
+
+**Remover apaga de vez** a conta, as chaves, as sessões, o uso, as assinaturas e os pagamentos, e libera o
 e-mail. Só vale para conta já desativada (409 se ativa). Assinatura viva é cancelada no Asaas antes;
 se o Asaas não cancelar, nada é apagado. Com a cobrança desligada, conta com assinatura viva não sai.
 
@@ -150,10 +163,10 @@ autor paga** ([ADR-034](../decisoes/ADR-034-cobranca-ligada-e-conferida.md)). De
 
 Ligada: a página assina Essencial ou Pro, o serviço cria cliente e
 assinatura no Asaas e devolve o link de pagamento. **Quem não tem conta assina pelo
-`POST /v1/assinatura`**, sem chave, e a resposta traz a chave, uma vez só, e o link. A chave
-responde 402 até o pagamento ser confirmado. E-mail de conta existente recebe 409 e assina em
-"Minha conta"; cadastro que nunca pagou é retomado por quem assina de novo, e as chaves antigas
-caem, salvo se houver assinatura de até sete dias aguardando pagamento. Cinco cadastros por hora por
+`POST /v1/assinatura`**, sem chave, com a senha, e a resposta traz a chave, uma vez só, a sessão e
+o link. A chave responde 402 até o pagamento ser confirmado. E-mail de conta existente recebe 409 e
+assina em "Minha conta"; cadastro que nunca pagou é retomado por quem assina de novo, e a senha, as
+sessões e as chaves antigas caem, salvo se houver assinatura de até sete dias aguardando pagamento. Cinco cadastros por hora por
 endereço.
 
 **O que se pede de quem paga:**

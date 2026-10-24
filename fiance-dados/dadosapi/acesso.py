@@ -12,6 +12,9 @@ import sqlalchemy as sa
 
 PREFIXO_DA_CHAVE = "fd_"
 TAMANHO_DO_PREFIXO = len(PREFIXO_DA_CHAVE) + 8
+PREFIXO_DA_SESSAO = "fs_"
+DURACAO_DA_SESSAO = timedelta(hours=12)
+_SCRYPT = {"n": 2**14, "r": 8, "p": 1}
 _BRT = ZoneInfo("America/Sao_Paulo")
 TOLERANCIA_DE_PAGAMENTO = timedelta(days=3)
 AVISO_DE_VENCIMENTO = timedelta(days=7)
@@ -66,6 +69,21 @@ def hash_da_chave(texto: str) -> str:
 def gerar_chave() -> tuple[str, str, str]:
     texto = PREFIXO_DA_CHAVE + secrets.token_urlsafe(32)
     return texto, texto[:TAMANHO_DO_PREFIXO], hash_da_chave(texto)
+
+
+def hash_da_senha(senha: str) -> str:
+    sal = secrets.token_bytes(16)
+    feito = hashlib.scrypt(senha.encode(), salt=sal, **_SCRYPT)
+    return f"scrypt${_SCRYPT['n']}${_SCRYPT['r']}${_SCRYPT['p']}${sal.hex()}${feito.hex()}"
+
+
+def senha_confere(senha: str, guardado: str | None) -> bool:
+    if not guardado:
+        hash_da_senha(senha)  # mesmo custo sem senha guardada: o tempo não revela o e-mail
+        return False
+    _, n, r, p, sal, esperado = guardado.split("$")
+    feito = hashlib.scrypt(senha.encode(), salt=bytes.fromhex(sal), n=int(n), r=int(r), p=int(p))
+    return secrets.compare_digest(feito.hex(), esperado)
 
 
 # Janela fixa por minuto na memória do processo: com mais de uma réplica, cada uma conta a sua.
@@ -140,7 +158,7 @@ _CHAVE_VALIDA = sa.text(
     """
     SELECT k.id AS chave_id, k.prefixo, c.id AS conta_id, c.pago_ate, p.codigo,
         p.limite_por_minuto, p.limite_por_dia, p.historico_dias, p.chaves_maximas, p.recursos,
-        p.preco_mensal_centavos
+        p.preco_mensal_centavos, c.senha_hash IS NOT NULL AS tem_senha
     FROM acesso.chave k
     JOIN acesso.conta c ON c.id = k.conta_id
     JOIN acesso.plano p ON p.codigo = c.plano
@@ -202,16 +220,99 @@ def autenticar(
     return Acesso(linha.conta_id, linha.chave_id, linha.prefixo, plano, usadas)
 
 
-def entrar(engine: sa.Engine, texto: str | None) -> int:
+_SESSAO_VALIDA = sa.text(
+    """
+    SELECT s.conta_id FROM acesso.sessao s JOIN acesso.conta c ON c.id = s.conta_id
+    WHERE s.hash = :hash AND s.expira_em > now() AND c.ativa
+    """
+)
+
+
+def entrar(engine: sa.Engine, texto: str | None, *, so_consulta: bool = False) -> int:
+    if texto and texto.startswith(PREFIXO_DA_SESSAO):
+        with engine.connect() as conn:
+            conta_id = conn.execute(_SESSAO_VALIDA, {"hash": hash_da_chave(texto)}).scalar()
+        if conta_id is None:
+            raise SemAcesso(401, "Sessão vencida ou encerrada. Entre de novo com e-mail e senha.")
+        return conta_id
     if not texto or not texto.startswith(PREFIXO_DA_CHAVE):
         raise SemAcesso(
-            401, "Chave ausente ou em formato inválido. Envie Authorization: Bearer <chave>."
+            401, "Entre com e-mail e senha, ou envie a chave em Authorization: Bearer <chave>."
         )
     with engine.connect() as conn:
         linha = conn.execute(_CHAVE_VALIDA, {"hash": hash_da_chave(texto)}).first()
     if linha is None:
         raise SemAcesso(401, "Chave desconhecida, revogada, ou de conta desativada.")
+    if linha.tem_senha and not so_consulta:
+        raise SemAcesso(
+            403, "Esta conta entra com e-mail e senha: pela chave, ela só consulta a conta."
+        )
     return linha.conta_id
+
+
+def nova_sessao(engine: sa.Engine, conta_id: int) -> dict:
+    texto = PREFIXO_DA_SESSAO + secrets.token_urlsafe(32)
+    with engine.begin() as conn:
+        conn.execute(
+            sa.text("DELETE FROM acesso.sessao WHERE conta_id = :c AND expira_em <= now()"),
+            {"c": conta_id},
+        )
+        expira_em = conn.execute(
+            sa.text(
+                "INSERT INTO acesso.sessao (conta_id, hash, expira_em) "
+                "VALUES (:c, :h, now() + :duracao) RETURNING expira_em"
+            ),
+            {"c": conta_id, "h": hash_da_chave(texto), "duracao": DURACAO_DA_SESSAO},
+        ).scalar_one()
+    return {"sessao": texto, "expira_em": expira_em}
+
+
+def entrar_com_senha(engine: sa.Engine, email: str, senha: str) -> dict:
+    with engine.connect() as conn:
+        conta = conn.execute(
+            sa.text(
+                "SELECT id, senha_hash FROM acesso.conta WHERE lower(email) = lower(:e) AND ativa"
+            ),
+            {"e": email.strip()},
+        ).first()
+    if not senha_confere(senha, conta.senha_hash if conta else None):
+        raise SemAcesso(401, "E-mail ou senha incorretos.")
+    return nova_sessao(engine, conta.id)
+
+
+def encerrar_sessao(engine: sa.Engine, texto: str | None) -> None:
+    if texto and texto.startswith(PREFIXO_DA_SESSAO):
+        with engine.begin() as conn:
+            conn.execute(
+                sa.text("DELETE FROM acesso.sessao WHERE hash = :h"), {"h": hash_da_chave(texto)}
+            )
+
+
+def definir_senha(engine: sa.Engine, conta_id: int, nova: str, atual: str | None) -> dict:
+    with engine.connect() as conn:
+        guardada = conn.execute(
+            sa.text("SELECT senha_hash FROM acesso.conta WHERE id = :id"), {"id": conta_id}
+        ).scalar()
+    if guardada is not None and not senha_confere(atual or "", guardada):
+        raise SemAcesso(403, "A senha atual não confere.")
+    with engine.begin() as conn:
+        conn.execute(
+            sa.text("UPDATE acesso.conta SET senha_hash = :s WHERE id = :id"),
+            {"s": hash_da_senha(nova), "id": conta_id},
+        )
+        conn.execute(sa.text("DELETE FROM acesso.sessao WHERE conta_id = :id"), {"id": conta_id})
+    return nova_sessao(engine, conta_id)
+
+
+def redefinir_senha(engine: sa.Engine, conta_id: int) -> None:
+    with engine.begin() as conn:
+        conta = conn.execute(
+            sa.text("UPDATE acesso.conta SET senha_hash = NULL WHERE id = :id RETURNING id"),
+            {"id": conta_id},
+        ).first()
+        conn.execute(sa.text("DELETE FROM acesso.sessao WHERE conta_id = :id"), {"id": conta_id})
+    if conta is None:
+        raise SemAcesso(404, "Conta não encontrada.")
 
 
 def exigir(a: Acesso, recurso: str) -> None:
@@ -286,7 +387,8 @@ _CONTA_DO_EMAIL = sa.text(
 )
 
 
-def conta_do_cadastro(engine: sa.Engine, email: str, nome: str, plano: str) -> int:
+def conta_do_cadastro(engine: sa.Engine, email: str, nome: str, plano: str, senha: str) -> int:
+    senha_hash = hash_da_senha(senha)
     with engine.begin() as conn:
         conta = conn.execute(
             _CONTA_DO_EMAIL, {"e": email, "pendente": CADASTRO_AGUARDANDO_PAGAMENTO}
@@ -296,10 +398,10 @@ def conta_do_cadastro(engine: sa.Engine, email: str, nome: str, plano: str) -> i
                 with conn.begin_nested():
                     return conn.execute(
                         sa.text(
-                            "INSERT INTO acesso.conta (email, nome, plano, observacao) "
-                            "VALUES (:e, :n, :p, 'cadastro pelo portal') RETURNING id"
+                            "INSERT INTO acesso.conta (email, nome, plano, observacao, senha_hash) "
+                            "VALUES (:e, :n, :p, 'cadastro pelo portal', :s) RETURNING id"
                         ),
-                        {"e": email, "n": nome, "p": plano},
+                        {"e": email, "n": nome, "p": plano, "s": senha_hash},
                     ).scalar_one()
             except sa.exc.IntegrityError:
                 raise SemAcesso(
@@ -308,8 +410,7 @@ def conta_do_cadastro(engine: sa.Engine, email: str, nome: str, plano: str) -> i
         if not conta.ativa or not conta.plano_pago or conta.pago_ate is not None:
             raise SemAcesso(
                 409,
-                "Já existe uma conta com esse e-mail. Entre com a sua chave em Minha conta para "
-                "assinar.",
+                "Já existe uma conta com esse e-mail. Entre em Minha conta para assinar.",
             )
         if conta.aguardando:
             raise SemAcesso(
@@ -324,9 +425,12 @@ def conta_do_cadastro(engine: sa.Engine, email: str, nome: str, plano: str) -> i
             ),
             {"id": conta.id},
         )
+        conn.execute(sa.text("DELETE FROM acesso.sessao WHERE conta_id = :id"), {"id": conta.id})
         conn.execute(
-            sa.text("UPDATE acesso.conta SET nome = :n, plano = :p WHERE id = :id"),
-            {"n": nome, "p": plano, "id": conta.id},
+            sa.text(
+                "UPDATE acesso.conta SET nome = :n, plano = :p, senha_hash = :s WHERE id = :id"
+            ),
+            {"n": nome, "p": plano, "s": senha_hash, "id": conta.id},
         )
         return conta.id
 
@@ -400,6 +504,7 @@ def remover_conta(engine: sa.Engine, conta_id: int) -> None:
             "DELETE FROM acesso.uso_diario WHERE chave_id IN "
             "(SELECT id FROM acesso.chave WHERE conta_id = :id)",
             "DELETE FROM acesso.chave WHERE conta_id = :id",
+            "DELETE FROM acesso.sessao WHERE conta_id = :id",
             "DELETE FROM acesso.pagamento WHERE assinatura_id IN "
             "(SELECT id FROM acesso.assinatura WHERE conta_id = :id)",
             "DELETE FROM acesso.assinatura WHERE conta_id = :id",
@@ -445,6 +550,7 @@ def resumo_da_conta(engine: sa.Engine, conta_id: int, dia: date | None = None) -
                 "SELECT c.id, c.email, c.nome, c.ativa, c.criada_em, c.pago_ate, c.observacao, "
                 "p.codigo AS plano, p.nome AS plano_nome, p.limite_por_minuto, p.limite_por_dia, "
                 "p.historico_dias, p.chaves_maximas, p.recursos, "
+                "c.senha_hash IS NOT NULL AS tem_senha, "
                 f"p.preco_mensal_centavos IS NOT NULL AS plano_pago, {_AGUARDANDO} "
                 "FROM acesso.conta c JOIN acesso.plano p ON p.codigo = c.plano WHERE c.id = :id"
             ),
@@ -503,6 +609,7 @@ def listar_contas(engine: sa.Engine, dia: date | None = None) -> list[dict]:
                 )
                 SELECT c.id, c.email, c.nome, c.plano, p.nome AS plano_nome, c.ativa, c.criada_em,
                     c.pago_ate, c.observacao, p.limite_por_dia, p.chaves_maximas,
+                    c.senha_hash IS NOT NULL AS tem_senha,
                     p.preco_mensal_centavos IS NOT NULL AS plano_pago, {_AGUARDANDO},
                     coalesce(k.ativas, 0) AS chaves_ativas, k.ultimo_uso_em,
                     coalesce(u.hoje, 0) AS requisicoes_hoje,

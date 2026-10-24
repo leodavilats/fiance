@@ -16,6 +16,7 @@ from tests.conftest import TOKEN, criar_conta
 
 WEBHOOK = "w" * 40
 PAGADOR = {"nome": "Fulano", "cpf_cnpj": "123.456.789-09", "cep": "01310-100", "numero": "1000"}
+SENHA = "uma senha longa"
 
 
 @pytest.fixture
@@ -262,7 +263,7 @@ def test_assinar_de_novo_cancela_a_anterior_e_ignora_o_pagamento_dela(
 
 
 def _cadastro(email: str = "novo@teste.com") -> dict:
-    return {"plano": "pro", **PAGADOR, "nome": "Nova", "email": email}
+    return {"plano": "pro", **PAGADOR, "nome": "Nova", "email": email, "senha": SENHA}
 
 
 def test_assinar_sem_conta_devolve_a_chave_que_so_vale_depois_do_pagamento(com_cobranca):
@@ -303,6 +304,29 @@ def test_cadastro_que_nunca_pagou_e_retomado_e_a_chave_antiga_cai(com_cobranca, 
     )
     assert segunda.status_code == 201, "cadastro que nunca pagou não prende o e-mail para sempre"
     assert com_cobranca.get("/v1/ativos", headers=antiga).status_code == 401
+    sessao_antiga = {"Authorization": f"Bearer {primeira['sessao']}"}
+    assert com_cobranca.get("/v1/conta", headers=sessao_antiga).status_code == 401, (
+        "quem retoma o cadastro troca a senha, e a sessão de quem o abandonou cai junto"
+    )
+
+
+def test_quem_assinou_e_perdeu_a_chave_entra_com_email_e_senha(com_cobranca):
+    feito = com_cobranca.post("/v1/assinatura", json=_cadastro()).json()["dados"]
+    entrada = com_cobranca.post(
+        "/v1/conta/sessao", json={"email": "Novo@teste.com", "senha": SENHA}
+    )
+    sessao = {"Authorization": f"Bearer {entrada.json()['dados']['sessao']}"}
+    nova = com_cobranca.post("/v1/conta/chaves", json={"nome": "outra"}, headers=sessao)
+
+    assert feito["sessao"].startswith("fs_"), "o cadastro já entra em Minha conta"
+    assert entrada.status_code == 201
+    assert nova.status_code == 201, "perder a chave não tranca mais ninguém fora da conta"
+
+
+def test_cadastro_exige_senha_de_dez_caracteres(com_cobranca, pedidos):
+    resposta = com_cobranca.post("/v1/assinatura", json={**_cadastro(), "senha": "curta"})
+
+    assert resposta.status_code == 422 and pedidos == []
 
 
 def test_cadastro_tem_teto_por_endereco(com_cobranca):
@@ -397,7 +421,10 @@ def test_assinante_vencido_renova_pela_conta_sem_repetir_o_cpf(com_cobranca, ped
     )
 
     vencida = com_cobranca.get("/v1/conta", headers=chave).json()["dados"]
-    renovada = com_cobranca.post("/v1/conta/assinatura", json={"plano": "essencial"}, headers=chave)
+    sessao = {"Authorization": f"Bearer {feito['sessao']}"}
+    renovada = com_cobranca.post(
+        "/v1/conta/assinatura", json={"plano": "essencial"}, headers=sessao
+    )
 
     assert vencida["situacao"] == "sem_pagamento"
     assert renovada.status_code == 201, renovada.text
@@ -828,10 +855,10 @@ def test_parcelas_so_no_anual(com_cobranca, pedidos, bancos):
 
 def test_trocar_de_plano_nao_mexe_no_parcelado_ja_pago(com_cobranca, pagamentos, pedidos):
     feito = _assinar_parcelado(com_cobranca, pagamentos)
-    chave = {"Authorization": f"Bearer {feito['chave']}"}
+    sessao = {"Authorization": f"Bearer {feito['sessao']}"}
     _pagar_no_cartao(com_cobranca, pagamentos)
 
-    com_cobranca.post("/v1/conta/assinatura", json={"plano": "essencial"}, headers=chave)
+    com_cobranca.post("/v1/conta/assinatura", json={"plano": "essencial"}, headers=sessao)
 
     assert not [p for p in pedidos if p.method == "DELETE"], (
         "o parcelado pago já foi cobrado no cartão: não há recorrência a cancelar"
@@ -842,9 +869,9 @@ def test_parcelado_que_nao_foi_pago_cai_no_asaas_quando_substituido(
     com_cobranca, pagamentos, pedidos
 ):
     feito = _assinar_parcelado(com_cobranca, pagamentos)
-    chave = {"Authorization": f"Bearer {feito['chave']}"}
+    sessao = {"Authorization": f"Bearer {feito['sessao']}"}
 
-    com_cobranca.post("/v1/conta/assinatura", json={"plano": "pro"}, headers=chave)
+    com_cobranca.post("/v1/conta/assinatura", json={"plano": "pro"}, headers=sessao)
 
     assert ("DELETE", "/v3/installments/ins_1") in [(p.method, p.url.path) for p in pedidos]
 
@@ -853,8 +880,8 @@ def test_parcelado_pago_depois_de_substituido_e_estornado_inteiro(
     com_cobranca, pagamentos, pedidos
 ):
     feito = _assinar_parcelado(com_cobranca, pagamentos)
-    chave = {"Authorization": f"Bearer {feito['chave']}"}
-    com_cobranca.post("/v1/conta/assinatura", json={"plano": "pro"}, headers=chave)
+    sessao = {"Authorization": f"Bearer {feito['sessao']}"}
+    com_cobranca.post("/v1/conta/assinatura", json={"plano": "pro"}, headers=sessao)
 
     for p in pagamentos.values():
         if p.get("installment") == "ins_1":

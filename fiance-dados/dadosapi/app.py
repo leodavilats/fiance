@@ -26,6 +26,7 @@ LIMITE_MAXIMO = 5000
 MAXIMO_DE_RETRATOS = 50
 CHAVES_NOVAS_POR_DIA = 10
 CADASTROS_POR_HORA = 5
+SENHA_MINIMA = 10
 CONFERENCIA_A_CADA = 6 * 3600
 PRIMEIRA_CONFERENCIA = 60
 EXEMPLO_DA_VITRINE = "HAPV3"
@@ -85,6 +86,17 @@ class NovoAssinante(NovaAssinatura):
     cep: str = Field(max_length=9)
     numero: str = Field(max_length=10)
     email: str = Field(max_length=200, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    senha: str = Field(min_length=SENHA_MINIMA, max_length=200)
+
+
+class Entrada(BaseModel):
+    email: str = Field(min_length=3, max_length=200)
+    senha: str = Field(min_length=1, max_length=200)
+
+
+class NovaSenha(BaseModel):
+    senha: str = Field(min_length=SENHA_MINIMA, max_length=200)
+    atual: str | None = Field(default=None, max_length=200)
 
 
 class NovaChave(BaseModel):
@@ -104,6 +116,11 @@ def _origem(request: Request, proxies_confiaveis: int) -> str:
     if proxies_confiaveis <= 0 or len(cadeia) < proxies_confiaveis:
         return conexao
     return cadeia[-proxies_confiaveis]
+
+
+def _credencial(request: Request) -> str | None:
+    texto = request.headers.get("authorization", "").removeprefix("Bearer ").strip()
+    return texto or request.headers.get("x-api-key")
 
 
 def _conferir_sempre(conferir: Callable[[], dict], parar: threading.Event) -> None:
@@ -146,6 +163,7 @@ def criar(
     por_minuto = acesso.LimitePorMinuto()
     tentativas = acesso.Tentativas()
     cadastros = acesso.Tentativas(maximo=CADASTROS_POR_HORA, janela=3600.0)
+    tentativas_de_senha = acesso.Tentativas()
     if asaas is None and config.cobranca_ativa:
         asaas = cobranca.Asaas.criar(
             config.asaas_url, config.asaas_chave, config.asaas_token_webhook
@@ -215,19 +233,27 @@ def criar(
             resposta.headers["X-Restante-Dia"] = str(uso.restantes_hoje)
         return resposta
 
-    def autenticado(request: Request, authorization: str | None = Header(default=None)):
-        texto = (authorization or "").removeprefix("Bearer ").strip() or request.headers.get(
-            "x-api-key"
-        )
-        uso = acesso.autenticar(bancos.acesso, texto, por_minuto)
+    def autenticado(request: Request):
+        uso = acesso.autenticar(bancos.acesso, _credencial(request), por_minuto)
         request.state.acesso = uso
         return uso
 
-    def na_conta(request: Request, authorization: str | None = Header(default=None)) -> int:
-        texto = (authorization or "").removeprefix("Bearer ").strip() or request.headers.get(
-            "x-api-key"
-        )
-        return acesso.entrar(bancos.acesso, texto)
+    def na_conta(request: Request) -> int:
+        return acesso.entrar(bancos.acesso, _credencial(request))
+
+    def consultando_a_conta(request: Request) -> int:
+        return acesso.entrar(bancos.acesso, _credencial(request), so_consulta=True)
+
+    def conferindo_senha(origens: list[str], conferir: Callable[[], dict]) -> dict:
+        if any(tentativas_de_senha.bloqueado(o) for o in origens):
+            raise HTTPException(429, "Tentativas demais. Espere 15 minutos.")
+        try:
+            return conferir()
+        except acesso.SemAcesso as erro:
+            if erro.status in (401, 403):
+                for o in origens:
+                    tentativas_de_senha.registrar(o)
+            raise
 
     def administrador(request: Request, x_admin_token: str | None = Header(default=None)) -> None:
         origem = _origem(request, config.proxies_confiaveis)
@@ -303,10 +329,10 @@ def criar(
         "/v1/assinatura",
         tags=["conta"],
         status_code=201,
-        summary="Criar a conta e assinar: devolve a chave e o link de pagamento",
+        summary="Criar a conta e assinar: devolve a chave, a sessão e o link de pagamento",
         description=(
-            "Sem chave. A conta nasce com a chave, que aparece só nesta resposta e responde 402 "
-            "até o Asaas confirmar o pagamento."
+            "Sem chave. A conta nasce com a senha e com a chave, que aparece só nesta resposta e "
+            "responde 402 até o Asaas confirmar o pagamento."
         ),
     )
     def assinar_sem_conta(corpo: NovoAssinante, request: Request) -> dict:
@@ -319,7 +345,7 @@ def criar(
             raise HTTPException(429, "Cadastros demais deste endereço. Tente de novo em uma hora.")
         cadastros.registrar(origem)
         conta_id = acesso.conta_do_cadastro(
-            bancos.acesso, corpo.email.strip(), corpo.nome.strip(), corpo.plano
+            bancos.acesso, corpo.email.strip(), corpo.nome.strip(), corpo.plano, corpo.senha
         )
         chave = acesso.emitir_chave(bancos.acesso, conta_id, "principal", CHAVES_NOVAS_POR_DIA)
         assinatura = cobranca.criar_assinatura(
@@ -332,7 +358,12 @@ def criar(
             parcelas=corpo.parcelas,
         )
         return _resposta(
-            {**assinatura, "chave": chave["chave"], "prefixo": chave["prefixo"]},
+            {
+                **assinatura,
+                "chave": chave["chave"],
+                "prefixo": chave["prefixo"],
+                **acesso.nova_sessao(bancos.acesso, conta_id),
+            },
             aviso="A chave só aparece agora, e passa a valer quando o pagamento for confirmado.",
         )
 
@@ -545,8 +576,46 @@ def criar(
             )
         return _resposta(dados, proximo)
 
+    @app.post(
+        "/v1/conta/sessao",
+        tags=["conta"],
+        status_code=201,
+        summary="Entrar com e-mail e senha: devolve a sessão de Minha conta",
+        description=(
+            "A sessão vale 12 horas em `Authorization: Bearer fs_…` nas rotas de `/v1/conta`. "
+            "Não lê dado: os dados são pela chave."
+        ),
+    )
+    def abrir_sessao(corpo: Entrada, request: Request) -> dict:
+        origens = [
+            _origem(request, config.proxies_confiaveis),
+            "email:" + corpo.email.strip().lower(),
+        ]
+        return _resposta(
+            conferindo_senha(
+                origens, lambda: acesso.entrar_com_senha(bancos.acesso, corpo.email, corpo.senha)
+            )
+        )
+
+    @app.delete("/v1/conta/sessao", tags=["conta"], status_code=204, summary="Sair")
+    def fechar_sessao(request: Request) -> None:
+        acesso.encerrar_sessao(bancos.acesso, _credencial(request))
+
+    @app.put(
+        "/v1/conta/senha",
+        tags=["conta"],
+        summary="Definir ou trocar a senha: encerra as outras sessões e devolve uma nova",
+    )
+    def trocar_senha(corpo: NovaSenha, conta_id: int = Depends(na_conta)) -> dict:
+        return _resposta(
+            conferindo_senha(
+                [f"conta:{conta_id}"],
+                lambda: acesso.definir_senha(bancos.acesso, conta_id, corpo.senha, corpo.atual),
+            )
+        )
+
     @app.get("/v1/conta", tags=["conta"], summary="A sua conta, plano, chaves e uso de hoje")
-    def ver_conta(response: Response, conta_id: int = Depends(na_conta)) -> dict:
+    def ver_conta(response: Response, conta_id: int = Depends(consultando_a_conta)) -> dict:
         conta = acesso.resumo_da_conta(bancos.acesso, conta_id)
         conta.pop("observacao")
         response.headers["X-Limite-Dia"] = str(conta["limite_por_dia"])
@@ -670,6 +739,15 @@ def criar(
     )
     def admin_remover_conta(conta_id: int) -> None:
         cobranca.remover_conta(bancos.acesso, asaas, conta_id)
+
+    @app.delete(
+        "/admin/contas/{conta_id}/senha",
+        include_in_schema=False,
+        status_code=204,
+        dependencies=[Depends(administrador)],
+    )
+    def admin_redefinir_senha(conta_id: int) -> None:
+        acesso.redefinir_senha(bancos.acesso, conta_id)
 
     @app.post(
         "/admin/contas/{conta_id}/chaves",

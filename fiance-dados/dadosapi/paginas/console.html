@@ -1146,8 +1146,19 @@ function desenharConta(conta, uso) {
   const linhasUso = linhasDeUso(uso, 30);
   const totalUso = linhasUso.reduce((s, d) => s + d.requisicoes, 0);
 
+  const senha = conta.tem_senha
+    ? [
+        el("p", { class: "suave", style: "margin:0 0 8px" }, "Entra em Minha conta com e-mail e senha. Redefinir apaga a senha e encerra as sessões: a pessoa volta a entrar com uma chave e define outra. Se ela também perdeu a chave, emita uma acima e entregue."),
+        el("button", { type: "button", style: "margin-bottom:16px", onclick: async () => {
+          const ok = await confirmar({ titulo: `Redefinir a senha de ${conta.email}?`, texto: "A senha deixa de valer e as sessões abertas caem. As chaves seguem valendo.", botao: "Redefinir", perigo: true });
+          if (!ok) return;
+          try { await tentar(() => chamar("DELETE", `/admin/contas/${conta.id}/senha`), { sucesso: "Senha redefinida." }); await tentar(carregar); await abrirConta(conta.id); } catch {}
+        } }, "Redefinir senha"),
+      ]
+    : [el("p", { class: "suave", style: "margin:0 0 16px" }, "Sem senha: entra em Minha conta com a chave e define a senha lá.")];
   const acesso = conta.ativa
     ? el("div", {},
+        ...senha,
         el("p", { class: "suave", style: "margin:0 0 8px" }, "Desativar para todas as chaves na hora. Os dados da conta e o histórico de uso ficam."),
         el("button", { type: "button", class: "perigo", onclick: async () => {
           const ok = await confirmar({ titulo: `Desativar ${conta.email}?`, texto: `As ${ativas} chave(s) ativa(s) param de funcionar na hora. Dá para reativar depois; as chaves voltam a valer.`, botao: "Desativar", perigo: true });

@@ -48,6 +48,7 @@ troca. É por isso que justificativa não vai em comentário de código — ver
 | [033](ADR-033-conta-sem-pagamento-entra-em-minha-conta.md) | A conta sem pagamento entra em Minha conta, e o painel segue a situação dela | `ACEITO` | 2026-10-24 |
 | [034](ADR-034-cobranca-ligada-e-conferida.md) | A cobrança liga para o autor, o cadastro pede o endereço, e o Asaas é conferido | `ACEITO` | 2026-10-24 |
 | [035](ADR-035-anual-parcelado-no-cartao.md) | O anual pode ser dividido em até 12x no cartão, como parcelamento e sem renovação automática | `ACEITO` | 2026-10-24 |
+| [036](ADR-036-conta-entra-com-email-e-senha.md) | A pessoa entra com e-mail e senha, e a chave fica para a máquina | `ACEITO` | 2026-10-24 |
 
 ---
 
@@ -96,6 +97,9 @@ datada, e a ADR continua como foi escrita.
   cobrança ligou antes da licença, só para o autor, pela [ADR-034](ADR-034-cobranca-ligada-e-conferida.md).
 - **024** — com a cobrança aberta, a conta também nasce na assinatura, pela
   [ADR-031](ADR-031-assinatura-cria-a-conta.md); o convite continua para quem não paga.
+- **031 e 033** — Minha conta entra com e-mail e senha, e a chave de conta com senha só consulta a
+  conta ([ADR-036](ADR-036-conta-entra-com-email-e-senha.md)). Quem perde a chave antes de pagar
+  não fica mais preso: entra com a senha.
 
 ---
 

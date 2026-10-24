@@ -18,7 +18,8 @@ python -m ruff format --check dadosapi tests migrations
 ## Invariantes
 
 - **Só lê `mercado`.** Escreve só no schema `acesso`.
-- **A chave nunca é guardada, só o hash.**
+- **A chave, a sessão e a senha nunca são guardadas, só o hash.** Sessão não lê dado; com senha,
+  a chave só consulta a conta ([ADR-036](../docs/decisoes/ADR-036-conta-entra-com-email-e-senha.md)).
 - **Rota `/admin` exige `DADOS_API_ADMIN_TOKEN`** e não aparece na documentação pública.
 - **Coluna nova exige migração Alembic.**
 - **O estado de um pagamento sai da consulta ao Asaas**, nunca do corpo do webhook, e aplicá-lo de

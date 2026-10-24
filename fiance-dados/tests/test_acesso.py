@@ -290,3 +290,129 @@ def test_uso_por_dia_filtra_por_conta(cliente, chave):
     da_outra = cliente.get(f"/admin/uso?conta_id={outra['conta']['id']}", headers=ADMIN).json()
 
     assert so_dela[-1]["requisicoes"] == 1 and da_outra == []
+
+
+SENHA = "uma senha longa"
+
+
+def _com_senha(cliente, chave) -> dict:
+    definida = cliente.put("/v1/conta/senha", json={"senha": SENHA}, headers=chave)
+    assert definida.status_code == 200, definida.text
+    return {"Authorization": f"Bearer {definida.json()['dados']['sessao']}"}
+
+
+def _entrar(cliente, senha: str = SENHA, email: str = "eu@teste.com"):
+    return cliente.post("/v1/conta/sessao", json={"email": email, "senha": senha})
+
+
+def test_conta_com_senha_entra_por_email_e_a_chave_so_consulta(cliente, chave):
+    sessao = _com_senha(cliente, chave)
+
+    pela_chave = cliente.post("/v1/conta/chaves", json={"nome": "outra"}, headers=chave)
+    consulta = cliente.get("/v1/conta", headers=chave)
+    pela_sessao = cliente.post("/v1/conta/chaves", json={"nome": "outra"}, headers=sessao)
+
+    assert pela_chave.status_code == 403, "a chave vazada não emite chave nem troca a senha"
+    assert consulta.status_code == 200 and consulta.json()["dados"]["tem_senha"] is True
+    assert pela_sessao.status_code == 201
+    assert _entrar(cliente, "senha errada!").status_code == 401
+    assert _entrar(cliente, email="EU@teste.com").status_code == 201
+
+
+def test_sessao_nao_le_dado_e_sair_a_encerra(cliente, chave):
+    sessao = _com_senha(cliente, chave)
+
+    assert cliente.get("/v1/ativos", headers=sessao).status_code == 401, (
+        "a sessão é da pessoa; dado é pela chave, que conta na cota"
+    )
+    assert cliente.delete("/v1/conta/sessao", headers=sessao).status_code == 204
+    assert cliente.get("/v1/conta", headers=sessao).status_code == 401
+
+
+def test_sessao_vencida_ou_de_conta_desativada_nao_entra(cliente, bancos, chave):
+    sessao = _com_senha(cliente, chave)
+    with bancos.acesso.begin() as conn:
+        conn.execute(sa.text("UPDATE acesso.sessao SET expira_em = now() - interval '1 second'"))
+    vencida = cliente.get("/v1/conta", headers=sessao).status_code
+
+    nova = {"Authorization": f"Bearer {_entrar(cliente).json()['dados']['sessao']}"}
+    conta_id = cliente.get("/v1/conta", headers=nova).json()["dados"]["id"]
+    cliente.patch(f"/admin/contas/{conta_id}", json={"ativa": False}, headers=ADMIN)
+
+    assert vencida == 401
+    assert cliente.get("/v1/conta", headers=nova).status_code == 401
+    assert _entrar(cliente).status_code == 401
+
+
+def test_trocar_a_senha_pede_a_atual_e_derruba_as_outras_sessoes(cliente, chave):
+    sessao = _com_senha(cliente, chave)
+    outra = {"Authorization": f"Bearer {_entrar(cliente).json()['dados']['sessao']}"}
+
+    sem_a_atual = cliente.put(
+        "/v1/conta/senha", json={"senha": "outra senha longa"}, headers=sessao
+    )
+    trocada = cliente.put(
+        "/v1/conta/senha", json={"senha": "outra senha longa", "atual": SENHA}, headers=sessao
+    )
+
+    assert sem_a_atual.status_code == 403, "sessão roubada não troca a senha sozinha"
+    assert trocada.status_code == 200
+    assert cliente.get("/v1/conta", headers=outra).status_code == 401
+    assert _entrar(cliente).status_code == 401
+    assert _entrar(cliente, "outra senha longa").status_code == 201
+
+
+def test_senha_curta_e_recusada(cliente, chave):
+    resposta = cliente.put("/v1/conta/senha", json={"senha": "curta"}, headers=chave)
+
+    assert resposta.status_code == 422
+
+
+def test_dez_senhas_erradas_bloqueiam_o_email_ate_a_certa(cliente, chave):
+    _com_senha(cliente, chave)
+    respostas = [
+        cliente.post(
+            "/v1/conta/sessao",
+            json={"email": "eu@teste.com", "senha": "errada"},
+            headers={"X-Forwarded-For": f"10.0.0.{i}"},
+        ).status_code
+        for i in range(10)
+    ]
+
+    assert respostas == [401] * 10
+    assert _entrar(cliente).status_code == 429
+
+
+def test_e_mail_sem_conta_e_senha_errada_respondem_igual(cliente, chave):
+    _com_senha(cliente, chave)
+
+    sem_conta = _entrar(cliente, email="ninguem@teste.com")
+    errada = _entrar(cliente, "senha errada!")
+
+    assert sem_conta.status_code == errada.status_code == 401
+    assert sem_conta.json() == errada.json(), "a resposta não diz se o e-mail tem conta"
+
+
+def test_a_base_guarda_a_senha_e_a_sessao_so_em_hash(cliente, bancos, chave):
+    sessao = _com_senha(cliente, chave)["Authorization"][7:]
+
+    with bancos.acesso.connect() as conn:
+        senha = conn.execute(sa.text("SELECT senha_hash FROM acesso.conta")).scalar_one()
+        guardada = conn.execute(sa.text("SELECT hash FROM acesso.sessao")).scalar_one()
+
+    assert SENHA not in senha and acesso.senha_confere(SENHA, senha)
+    assert guardada == acesso.hash_da_chave(sessao)
+
+
+def test_administracao_redefine_a_senha_e_a_chave_volta_a_gerir_a_conta(cliente, chave):
+    sessao = _com_senha(cliente, chave)
+    conta_id = cliente.get("/v1/conta", headers=chave).json()["dados"]["id"]
+
+    redefinida = cliente.delete(f"/admin/contas/{conta_id}/senha", headers=ADMIN)
+
+    assert redefinida.status_code == 204
+    assert cliente.get("/v1/conta", headers=sessao).status_code == 401
+    assert _entrar(cliente).status_code == 401
+    assert (
+        cliente.put("/v1/conta/senha", json={"senha": SENHA}, headers=chave).status_code == 200
+    ), "sem senha, a chave que o autor entrega é o que deixa a pessoa definir outra"
